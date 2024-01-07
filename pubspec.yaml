@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_shaders: ^0.1.2
+  xml: ^6.5.0
+  path_drawing: ^1.0.1
 
 dev_dependencies:
   flutter_test:
@@ -17,3 +20,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  shaders:
+    - assets/shaders/simple_shader.frag
+    - assets/shaders/complex_shader.frag
+
+  assets:
+    - assets/images/
