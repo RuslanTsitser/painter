@@ -2,40 +2,41 @@
 
 #include<flutter/runtime_effect.glsl>
 
-precision mediump float;
-
-uniform float u_width;// Line width
-uniform float u_angle;// Line angle
-uniform vec4 u_color;// Input color (r,g,b,a)
-uniform vec2 u_resolution;// Canvas size (width,height)
+uniform float u_shift_left;
+uniform float u_shift_top;
+uniform float u_angle;// Line angle in degrees
+uniform vec4 u_color;// Color to tint texture
+uniform vec2 u_resolution;// Screen resolution
 uniform sampler2D u_texture;// Texture sampler
 
 out vec4 FragColor;
 
 void main(){
-    // Convert the pixel position to a coordinate from 0 to 1
+    // Normalize pixel coordinates (0.0 to 1.0)
     vec2 st=gl_FragCoord.xy/u_resolution;
     
-    // Rotate by angle
-    float angle=radians(u_angle);// Convert angle to radians
-    mat2 rot=mat2(cos(angle),-sin(angle),
-    sin(angle),cos(angle));
-    vec2 rotated=rot*(st-.5)+.5;// Rotate around the center
+    // Adjust for aspect ratio to ensure texture isn't stretched
+    float aspectRatio=u_resolution.x/u_resolution.y;
+    vec2 aspectCorrect=vec2(aspectRatio*st.x,st.y);
     
-    // Calculate the position in pixel units
-    float xPos=rotated.x*u_resolution.x;
-    float lineWidth=u_width;
-    float interval=lineWidth*1;
+    // Scaling factor for repeating the texture
+    float scale=.2;// Adjust this to increase/decrease the number of repeats
     
-    // Sample the texture color
-    vec4 texColor=texture(u_texture,st);
+    // Apply rotation
+    float angle=radians(u_angle);
+    mat2 rotationMatrix=mat2(cos(angle),-sin(angle),sin(angle),cos(angle));
+    vec2 centeredCoord=aspectCorrect-2;// Move origin to center for rotation
+    vec2 rotatedCoord=rotationMatrix*centeredCoord+.5;// Apply rotation
     
-    // Set the color of the pixel based on the line logic and apply texture color
-    if(mod(xPos,interval)<lineWidth){
-        // Draw a line with the texture color
-        FragColor=texColor*u_color;// Multiply by input color for tinting effect
-    }else{
-        // Make other pixels transparent or black
-        FragColor=vec4(0.,0.,0.,1.);
-    }
+    // Shift the texture to the left
+    float shiftLeft=u_shift_left;// This value can be adjusted to move the texture further to the left
+    float shiftTop=u_shift_top;// This value can be adjusted to move the texture further to the top
+    vec2 shiftedCoord=vec2(rotatedCoord.x-shiftLeft,rotatedCoord.y+shiftTop);
+    
+    // Repeat the texture by scaling the texture coordinates
+    vec2 repeatedCoord=shiftedCoord*scale;
+    
+    // Sample texture with rotated, repeated, and shifted coordinates and apply color
+    vec4 texColor=texture(u_texture,repeatedCoord);
+    FragColor=texColor*u_color;
 }
