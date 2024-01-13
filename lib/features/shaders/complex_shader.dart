@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_shaders/flutter_shaders.dart';
 
 class ComplexShaderScreen extends StatefulWidget {
   const ComplexShaderScreen({super.key});
@@ -80,29 +79,20 @@ class _ComplexShaderScreenState extends State<ComplexShaderScreen> with SingleTi
 class MyPainter extends CustomPainter {
   const MyPainter(this.shader, this._controller) : super(repaint: _controller);
 
-  final FragmentShader shader;
+  final ui.FragmentShader shader;
   final AnimationController _controller;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
 
-    shader.setFloatUniforms(
-      (value) {
-        value.setSize(Size(
-          size.width,
-          size.height,
-        ));
-        value.setFloat(_controller.value);
-        value.setOffset(
-          Offset(
-            size.width,
-            size.height,
-          ),
-        );
-      },
-      initialIndex: 0,
-    );
+    shader.setFloat(0, size.width);
+    shader.setFloat(1, size.height);
+
+    shader.setFloat(2, _controller.value);
+
+    shader.setFloat(3, size.width);
+    shader.setFloat(4, size.height);
 
     paint.shader = shader;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
@@ -111,17 +101,3 @@ class MyPainter extends CustomPainter {
   @override
   bool shouldRepaint(MyPainter oldDelegate) => true;
 }
-
-/**
- uniform vec3 iResolution; // viewport resolution (in pixels)
-uniform float iTime; // shader playback time (in seconds)
-uniform float iTimeDelta; // render time (in seconds)
-uniform float iFrameRate; // shader frame rate
-uniform int iFrame; // shader playback frame
-uniform float iChannelTime[4]; // channel playback time (in seconds)
-uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
-uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw
-click
-uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
-
- */

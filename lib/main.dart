@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:painter/features/examples/coloring_screen.dart';
+import 'package:painter/features/shaders/simple_shader.dart';
 
 void main() {
   runApp(const MainApp());
@@ -11,7 +11,8 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: ColoringScreen(),
+      home: SimpleShaderScreen(),
+      // home: FingerPainterScreen(),
     );
   }
 }

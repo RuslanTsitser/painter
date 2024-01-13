@@ -1,7 +1,8 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_shaders/flutter_shaders.dart';
+import 'package:flutter/services.dart';
 
 class SimpleShaderScreen extends StatefulWidget {
   const SimpleShaderScreen({super.key});
@@ -12,12 +13,26 @@ class SimpleShaderScreen extends StatefulWidget {
 
 class _SimpleShaderScreenState extends State<SimpleShaderScreen> with SingleTickerProviderStateMixin {
   ui.FragmentProgram? _program;
+  ui.Image? _brushTexture;
 
   Future<void> _loadMyShader() async {
     final fragment = await ui.FragmentProgram.fromAsset('assets/shaders/simple_shader.frag');
 
     setState(() {
       _program = fragment;
+    });
+  }
+
+  Future<void> _loadBrushTexture() async {
+    // Load the brush texture
+    final ByteData data = await rootBundle.load('assets/images/texture.png');
+    final bytes = data.buffer.asUint8List();
+    final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+    final ui.FrameInfo fi = await codec.getNextFrame();
+
+    // Redraw if the image is loaded
+    setState(() {
+      _brushTexture = fi.image;
     });
   }
 
@@ -33,6 +48,7 @@ class _SimpleShaderScreenState extends State<SimpleShaderScreen> with SingleTick
   @override
   void initState() {
     _initAnimationController();
+    _loadBrushTexture();
     _loadMyShader();
     super.initState();
   }
@@ -64,12 +80,13 @@ class _SimpleShaderScreenState extends State<SimpleShaderScreen> with SingleTick
               return const Icon(Icons.play_arrow);
             }),
       ),
-      body: _program == null
+      body: _program == null || _brushTexture == null
           ? const CircularProgressIndicator()
           : CustomPaint(
               size: MediaQuery.sizeOf(context),
               painter: MyPainter(
                 _program!.fragmentShader(),
+                _brushTexture!,
                 _controller,
               ),
             ),
@@ -78,25 +95,36 @@ class _SimpleShaderScreenState extends State<SimpleShaderScreen> with SingleTick
 }
 
 class MyPainter extends CustomPainter {
-  const MyPainter(this.shader, this._controller) : super(repaint: _controller);
+  const MyPainter(
+    this.shader,
+    this.brushTexture,
+    this.controller,
+  ) : super(repaint: controller);
 
-  final FragmentShader shader;
-  final AnimationController _controller;
+  final ui.FragmentShader shader;
+  final ui.Image brushTexture;
+  final AnimationController controller;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
 
-    shader.setFloatUniforms(
-      (value) {
-        value.setSize(Size(
-          size.width,
-          size.height,
-        ));
-        value.setFloat(_controller.value);
-      },
-      initialIndex: 0,
-    );
+    // color
+    const color = Colors.blue;
+    shader.setFloat(0, color.red / 255);
+    shader.setFloat(1, color.green / 255);
+    shader.setFloat(2, color.blue / 255);
+    shader.setFloat(3, color.alpha / 255);
+
+    // size
+    shader.setFloat(4, 500);
+    shader.setFloat(5, 500);
+
+    // rotation
+    shader.setFloat(6, pi * 2 * controller.value);
+
+    // texture
+    shader.setImageSampler(0, brushTexture);
 
     paint.shader = shader;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
@@ -105,17 +133,3 @@ class MyPainter extends CustomPainter {
   @override
   bool shouldRepaint(MyPainter oldDelegate) => true;
 }
-
-/**
- uniform vec3 iResolution; // viewport resolution (in pixels)
-uniform float iTime; // shader playback time (in seconds)
-uniform float iTimeDelta; // render time (in seconds)
-uniform float iFrameRate; // shader frame rate
-uniform int iFrame; // shader playback frame
-uniform float iChannelTime[4]; // channel playback time (in seconds)
-uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
-uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw
-click
-uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
-
- */
