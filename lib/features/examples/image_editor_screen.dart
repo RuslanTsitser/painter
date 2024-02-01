@@ -2,16 +2,12 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-class ImageEditorScreen extends StatefulWidget {
+final _repaintBoundaryKey = GlobalKey();
+final _movingRectKey = GlobalKey();
+
+class ImageEditorScreen extends StatelessWidget {
   const ImageEditorScreen({super.key});
 
-  @override
-  State<ImageEditorScreen> createState() => _ImageEditorScreenState();
-}
-
-class _ImageEditorScreenState extends State<ImageEditorScreen> {
-  final GlobalKey _repaintBoundaryKey = GlobalKey();
-  final _movingRectKey = GlobalKey<State<MovingRectWrapper>>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,27 +16,25 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
         actions: [
           IconButton(
             onPressed: () {
+              const double pixelRatio = 3.0;
               final RenderRepaintBoundary boundary =
                   _repaintBoundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+              final Size widgetSize = boundary.size;
+              final ui.Image image = boundary.toImageSync(pixelRatio: pixelRatio);
+              final MovingRectWrapperState state = _movingRectKey.currentState as MovingRectWrapperState;
+              final Offset rectCenterOffset = state.center;
+              final Size rectSize = state.size;
 
-              final movingRectState = _movingRectKey.currentWidget as MovingRectWrapper;
-              final top = movingRectState.top;
-              final left = movingRectState.left;
-              final width = movingRectState.width;
-              final height = movingRectState.height;
-
-              const imagePixelRatio = 1.0;
-              boundary.toImage(pixelRatio: imagePixelRatio).then((image) {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => CroppedImageScreen(
-                          image: image,
-                          top: top,
-                          left: left,
-                          width: width,
-                          height: height,
-                          imagePixelRatio: imagePixelRatio,
-                        )));
-              });
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => CroppedImageScreen(
+                    image: image,
+                    center: rectCenterOffset,
+                    size: rectSize,
+                    widgetSize: widgetSize,
+                  ),
+                ),
+              );
             },
             icon: const Icon(Icons.save),
           ),
@@ -51,7 +45,7 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
           key: _movingRectKey,
           child: RepaintBoundary(
             key: _repaintBoundaryKey,
-            child: Image.network('https://picsum.photos/id/418/400/700'), // id 178
+            child: Image.network('https://picsum.photos/id/418/400/700'),
           ),
         ),
       ),
@@ -60,27 +54,28 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
 }
 
 class MovingRectWrapper extends StatefulWidget {
-  const MovingRectWrapper({required GlobalKey key, required this.child}) : super(key: key);
+  const MovingRectWrapper({super.key, required this.child});
   final Widget child;
 
-  double get top => ((key as GlobalKey).currentState as _MovingRectWrapperState).top;
-  double get left => ((key as GlobalKey).currentState as _MovingRectWrapperState).left;
-  double get width => ((key as GlobalKey).currentState as _MovingRectWrapperState).width;
-  double get height => ((key as GlobalKey).currentState as _MovingRectWrapperState).height;
-
   @override
-  State<MovingRectWrapper> createState() => _MovingRectWrapperState();
+  State<MovingRectWrapper> createState() => MovingRectWrapperState();
 }
 
-class _MovingRectWrapperState extends State<MovingRectWrapper> {
+class MovingRectWrapperState extends State<MovingRectWrapper> {
   Offset _focalPoint = Offset.zero;
   double _scale = 1.0;
   Matrix4 _matrix = Matrix4.identity();
+  final double _width = 100.0;
+  final double _height = 100.0;
 
-  double get top => _matrix.getTranslation().y + context.size!.height / 2 - 50;
-  double get left => _matrix.getTranslation().x + context.size!.width / 2 - 50;
-  double get width => 100 * _scale;
-  double get height => 100 * _scale;
+  Offset get center => Offset(
+        _matrix[12] + context.size!.width / 2 - _width / 2 + size.width / 2,
+        _matrix[13] + context.size!.height / 2 - _height / 2 + size.height / 2,
+      );
+  Size get size => Size(
+        _width * _matrix[0],
+        _height * _matrix[5],
+      );
 
   void _onReset() {
     setState(() {
@@ -91,9 +86,7 @@ class _MovingRectWrapperState extends State<MovingRectWrapper> {
 
   void _onScaleStart(ScaleStartDetails details) {
     _focalPoint = details.focalPoint;
-    if (details.pointerCount > 1) {
-      _scale = 1.0;
-    }
+    _scale = 1.0;
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
@@ -132,8 +125,8 @@ class _MovingRectWrapperState extends State<MovingRectWrapper> {
           Transform(
             transform: _matrix,
             child: SizedBox(
-              width: 100,
-              height: 100,
+              width: _width,
+              height: _height,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.transparent,
@@ -171,62 +164,32 @@ Matrix4 _getScaleMatrix(double scale) {
   );
 }
 
-class CroppedImageScreen extends StatefulWidget {
+class CroppedImageScreen extends StatelessWidget {
   const CroppedImageScreen({
     super.key,
     required this.image,
-    required this.top,
-    required this.left,
-    required this.width,
-    required this.height,
-    this.imagePixelRatio = 1.0,
+    required this.center,
+    required this.size,
+    required this.widgetSize,
   });
   final ui.Image image;
-  final double top;
-  final double left;
-  final double width;
-  final double height;
-  final double imagePixelRatio;
+  final Offset center;
+  final Size size;
+  final Size widgetSize;
 
-  @override
-  State<CroppedImageScreen> createState() => _CroppedImageScreenState();
-}
-
-class _CroppedImageScreenState extends State<CroppedImageScreen> {
-  final GlobalKey _repaintBoundaryKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cropped Image'),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final boundary = _repaintBoundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-          boundary.toImage().then(
-              (image) => image.toByteData(format: ui.ImageByteFormat.png).then((bytes) => Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                              appBar: AppBar(
-                                title: const Text('Cropped Image'),
-                              ),
-                              body: Center(
-                                child: Image.memory(bytes!.buffer.asUint8List()),
-                              ),
-                            )),
-                  )));
-        },
-      ),
-      body: RepaintBoundary(
-        key: _repaintBoundaryKey,
+      body: Center(
         child: CustomPaint(
+          size: size,
           painter: CroppedImagePainter(
-            image: widget.image,
-            top: widget.top,
-            left: widget.left,
-            width: widget.width,
-            height: widget.height,
-            imagePixelRatio: widget.imagePixelRatio,
+            image: image,
+            center: center,
+            widgetSize: widgetSize,
           ),
         ),
       ),
@@ -237,34 +200,31 @@ class _CroppedImageScreenState extends State<CroppedImageScreen> {
 class CroppedImagePainter extends CustomPainter {
   const CroppedImagePainter({
     required this.image,
-    required this.top,
-    required this.left,
-    required this.width,
-    required this.height,
-    this.imagePixelRatio = 1.0,
+    required this.center,
+    required this.widgetSize,
   });
   final ui.Image image;
-  final double top;
-  final double left;
-  final double width;
-  final double height;
-  final double imagePixelRatio;
+  final Offset center;
+  final Size widgetSize;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final src = Rect.fromPoints(
-      Offset(
-        left * imagePixelRatio,
-        top * imagePixelRatio,
+    final pixelRatio = image.width / widgetSize.width;
+    final src = Rect.fromCenter(
+      center: Offset(
+        center.dx * pixelRatio,
+        center.dy * pixelRatio,
       ),
-      Offset(
-        (left + width) * imagePixelRatio,
-        (top + height) * imagePixelRatio,
-      ),
+      width: size.width * pixelRatio,
+      height: size.height * pixelRatio,
     );
-    final dst = Rect.fromPoints(
-      Offset(left, top),
-      Offset(left + width, top + height),
+    final dst = Rect.fromCenter(
+      center: Offset(
+        size.width / 2,
+        size.height / 2,
+      ),
+      width: size.width,
+      height: size.height,
     );
     canvas.drawImageRect(
       image,
