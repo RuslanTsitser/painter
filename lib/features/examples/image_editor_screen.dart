@@ -1,8 +1,8 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
-final _repaintBoundaryKey = GlobalKey();
+final _imageKey = GlobalKey();
 final _movingRectKey = GlobalKey();
 
 class ImageEditorScreen extends StatelessWidget {
@@ -16,11 +16,9 @@ class ImageEditorScreen extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {
-              const double pixelRatio = 3.0;
-              final RenderRepaintBoundary boundary =
-                  _repaintBoundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-              final Size widgetSize = boundary.size;
-              final ui.Image image = boundary.toImageSync(pixelRatio: pixelRatio);
+              final ImageWidgetState imageWidgetState = _imageKey.currentState as ImageWidgetState;
+              final ui.Image image = imageWidgetState.image!;
+              final Size widgetSize = imageWidgetState.size!;
               final MovingRectWrapperState state = _movingRectKey.currentState as MovingRectWrapperState;
               final Offset rectCenterOffset = state.center;
               final Size rectSize = state.size;
@@ -43,9 +41,8 @@ class ImageEditorScreen extends StatelessWidget {
       body: Center(
         child: MovingRectWrapper(
           key: _movingRectKey,
-          child: RepaintBoundary(
-            key: _repaintBoundaryKey,
-            child: Image.network('https://picsum.photos/id/418/400/700'),
+          child: ImageWidget(
+            key: _imageKey,
           ),
         ),
       ),
@@ -236,4 +233,70 @@ class CroppedImagePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CroppedImagePainter oldDelegate) => false;
+}
+
+class ImageWidget extends StatefulWidget {
+  const ImageWidget({
+    super.key,
+  });
+
+  @override
+  State<ImageWidget> createState() => ImageWidgetState();
+}
+
+class ImageWidgetState extends State<ImageWidget> {
+  ui.Image? _image;
+  @override
+  void initState() {
+    _loadImage();
+
+    super.initState();
+  }
+
+  ui.Image? get image => _image;
+  ui.Size? get size => _image?.width != null && _image?.height != null
+      ? ui.Size(_image!.width.toDouble(), _image!.height.toDouble())
+      : null;
+
+  Future<void> _loadImage() async {
+    final data = await NetworkAssetBundle(Uri.parse('https://picsum.photos/id/418/400/700')).load('');
+    final Uint8List bytes = data.buffer.asUint8List();
+    final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+    final ui.Image image = (await codec.getNextFrame()).image;
+    setState(() {
+      _image = image;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _image == null
+        ? const CircularProgressIndicator()
+        : CustomPaint(
+            size: Size(
+              _image!.width.toDouble(),
+              _image!.height.toDouble(),
+            ),
+            painter: ImagePainter(image: _image!),
+          );
+  }
+}
+
+class ImagePainter extends CustomPainter {
+  final ui.Image image;
+  const ImagePainter({
+    required this.image,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawImage(
+      image,
+      Offset.zero,
+      Paint()..filterQuality = FilterQuality.high,
+    );
+  }
+
+  @override
+  bool shouldRepaint(ImagePainter oldDelegate) => false;
 }
