@@ -1,18 +1,20 @@
+import 'dart:async';
 import 'dart:collection';
 
-abstract class FloodFill {
-  final List<List<int>> image;
+abstract class FloodFill<T, S> {
+  final T image;
   const FloodFill(this.image);
-  void fill(int startX, int startY, int newColor);
+  FutureOr<T?> fill(int startX, int startY, S newColor);
 }
 
-class BasicFloodFill extends FloodFill {
+class BasicFloodFill extends FloodFill<List<List<int>>, int> {
   const BasicFloodFill(List<List<int>> image) : super(image);
 
   @override
-  void fill(int startX, int startY, int newColor) {
+  List<List<int>>? fill(int startX, int startY, int newColor) {
     int originalColor = image[startX][startY];
     _floodFillUtil(startX, startY, originalColor, newColor);
+    return image;
   }
 
   void _floodFillUtil(int x, int y, int originalColor, int newColor) {
@@ -41,11 +43,11 @@ class Point {
   const Point(this.x, this.y);
 }
 
-class FloodFillQueueImpl extends FloodFill {
+class FloodFillQueueImpl extends FloodFill<List<List<int>>, int> {
   const FloodFillQueueImpl(List<List<int>> image) : super(image);
 
   @override
-  void fill(int startX, int startY, int newColor) {
+  List<List<int>>? fill(int startX, int startY, int newColor) {
     final int oldColor = image[startX][startY];
     final int width = image[0].length;
     final int height = image.length;
@@ -74,10 +76,11 @@ class FloodFillQueueImpl extends FloodFill {
         }
       }
     }
+    return image;
   }
 }
 
-class FloodFillSpanImpl extends FloodFill {
+class FloodFillSpanImpl extends FloodFill<List<List<int>>, int> {
   const FloodFillSpanImpl(List<List<int>> image) : super(image);
 
   // Check if the point is inside the canvas and matches the target color
@@ -91,10 +94,10 @@ class FloodFillSpanImpl extends FloodFill {
   }
 
   @override
-  void fill(int startX, int startY, int newColor) {
+  List<List<int>>? fill(int startX, int startY, int newColor) {
     final targetColor = image[startX][startY];
 
-    if (!_isInside(startX, startY, targetColor)) return;
+    if (!_isInside(startX, startY, targetColor)) return null;
 
     var s = <List<int>>[];
     s.add([startX, startX, startY, 1]);
@@ -136,5 +139,6 @@ class FloodFillSpanImpl extends FloodFill {
         nx = x1;
       }
     }
+    return image;
   }
 }
