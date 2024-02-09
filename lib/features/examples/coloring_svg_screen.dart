@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:path_drawing/path_drawing.dart';
 import 'package:xml/xml.dart';
 
-class ColoringScreen extends StatefulWidget {
-  const ColoringScreen({super.key});
+class ColoringSvgScreen extends StatefulWidget {
+  const ColoringSvgScreen({super.key});
 
   @override
-  State<ColoringScreen> createState() => _ColoringScreenState();
+  State<ColoringSvgScreen> createState() => _ColoringSvgScreenState();
 }
 
-class _ColoringScreenState extends State<ColoringScreen> {
+class _ColoringSvgScreenState extends State<ColoringSvgScreen> {
   final repaintKey = GlobalKey();
 
   Size? _size;

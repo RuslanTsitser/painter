@@ -8,8 +8,8 @@ import 'package:http/http.dart' as http;
 
 import 'flood_fill_raster.dart';
 
-class FloodFillRasterScreen extends StatelessWidget {
-  const FloodFillRasterScreen({super.key});
+class ColoringRasterScreen extends StatelessWidget {
+  const ColoringRasterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
