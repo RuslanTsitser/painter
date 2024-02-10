@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:painter/features/coloring_raster/coloring_raster_screen.dart';
+
+import 'features/coloring_svg/coloring_svg_screen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -12,7 +13,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       // home: SimpleShaderScreen(),
-      home: ColoringRasterScreen(),
+      home: ColoringSvgScreen(),
     );
   }
 }
