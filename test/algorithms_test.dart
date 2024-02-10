@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:painter/features/examples/algorithms.dart';
+import 'package:painter/features/coloring_raster/algorithms.dart';
 
 void main() {
   group(

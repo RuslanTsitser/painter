@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:painter/features/examples/coloring_raster_screen.dart';
+import 'package:painter/features/coloring_raster/coloring_raster_screen.dart';
 
 void main() {
   runApp(const MainApp());

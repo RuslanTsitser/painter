@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:painter/features/examples/algorithms.dart';
+import 'package:painter/features/coloring_raster/algorithms.dart';
 
 class ImageFloodFillImpl extends FloodFill<ui.Image, ui.Color> {
   const ImageFloodFillImpl(ui.Image image) : super(image);
