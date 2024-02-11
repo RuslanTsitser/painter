@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:painter/features/coloring_svg/svg_painter.dart';
 
 import 'models.dart';
@@ -29,7 +32,7 @@ class _ColoringSvgScreenState extends State<ColoringSvgScreen> {
       'https://vk.com/doc223802256_674334116?hash=407AqZBhX6zQrqcI3cGxCZdJGaZDbv1ywq65EZ8eHqH&dl=5KapGZXnEYzXOUUA977vWJoTB0kvZSrUzp7drp4qPIX';
 
   Future<void> _init() async {
-    final value = await getVectorImage(urlDogWithSmile);
+    final value = await getVectorImage(urlDogDetailed);
     setState(() {
       _items = value.items;
       _size = value.size;
@@ -44,6 +47,27 @@ class _ColoringSvgScreenState extends State<ColoringSvgScreen> {
     });
   }
 
+  final GlobalKey _key = GlobalKey();
+  bool _isInteraction = false;
+  ui.Image? _image;
+
+  void _onInteractionStart() {
+    if (_isInteraction) return;
+    _image = (_key.currentContext!.findRenderObject()! as RenderRepaintBoundary).toImageSync();
+    setState(() {
+      _isInteraction = true;
+    });
+  }
+
+  void _onInteractionEnd() {
+    if (!_isInteraction) return;
+    setState(() {
+      _isInteraction = false;
+    });
+    _image?.dispose();
+    _image = null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,26 +75,34 @@ class _ColoringSvgScreenState extends State<ColoringSvgScreen> {
       body: _items == null || _size == null
           ? const Center(child: CircularProgressIndicator())
           : InteractiveViewer(
+              onInteractionStart: (_) => _onInteractionStart(),
+              onInteractionEnd: (_) => _onInteractionEnd(),
               child: Center(
                 child: FittedBox(
-                  // RepaintBoundary should be used to prevent rebuilds
-                  // during transformations with InteractiveViewer
-                  child: RepaintBoundary(
-                    child: SizedBox(
-                      width: _size!.width,
-                      height: _size!.height,
-                      child: Stack(
-                        children: [
-                          for (int index = 0; index < _items!.length; index++)
-                            SvgPainterImage(
-                              item: _items![index],
-                              size: _size!,
-                              onTap: () => _onTap(index),
-                            )
-                        ],
-                      ),
-                    ),
-                  ),
+                  child: _isInteraction
+                      ? CustomPaint(
+                          size: _size!,
+                          painter: ImagePainter(_image!),
+                        )
+                      // RepaintBoundary should be used to prevent rebuilds
+                      // during transformations with InteractiveViewer
+                      : RepaintBoundary(
+                          key: _key,
+                          child: SizedBox(
+                            width: _size!.width,
+                            height: _size!.height,
+                            child: Stack(
+                              children: [
+                                for (int index = 0; index < _items!.length; index++)
+                                  SvgPainterImage(
+                                    item: _items![index],
+                                    size: _size!,
+                                    onTap: () => _onTap(index),
+                                  )
+                              ],
+                            ),
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -96,4 +128,19 @@ class SvgPainterImage extends StatelessWidget {
       foregroundPainter: SvgPainter(item, onTap),
     );
   }
+}
+
+class ImagePainter extends CustomPainter {
+  final ui.Image image;
+
+  const ImagePainter(this.image);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint();
+    canvas.drawImage(image, Offset.zero, paint);
+  }
+
+  @override
+  bool shouldRepaint(ImagePainter oldDelegate) => false;
 }
