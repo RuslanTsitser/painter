@@ -28,6 +28,7 @@ class _ColoringSvgScreenState extends State<ColoringSvgScreen> {
   Size? _size;
   List<PathSvgItem>? _items;
 
+  // ignore: unused_field
   static const urlDogWithSmile =
       'https://vk.com/doc223802256_674334116?hash=407AqZBhX6zQrqcI3cGxCZdJGaZDbv1ywq65EZ8eHqH&dl=5KapGZXnEYzXOUUA977vWJoTB0kvZSrUzp7drp4qPIX';
 
