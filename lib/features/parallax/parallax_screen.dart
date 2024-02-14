@@ -23,7 +23,6 @@ class _ParallaxScreenState extends State<ParallaxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: _Background(
         scrollController: _scrollController,
         imageProvider: const NetworkImage('https://picsum.photos/id/307/600/4000'),
@@ -50,48 +49,44 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
+    return Container(
+      margin: const EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 20,
       ),
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        width: double.maxFinite,
-        height: 300,
-        decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.4),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              spreadRadius: 5,
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Image.network(
-              'https://picsum.photos/id/$id/500/300',
-              fit: BoxFit.cover,
-              width: double.maxFinite,
-              height: 300,
-            ),
-            Positioned(
-              left: 20,
-              bottom: 20,
-              child: Text(
-                'Image $id',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+      clipBehavior: Clip.hardEdge,
+      width: double.maxFinite,
+      height: 300,
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Image.network(
+            'https://picsum.photos/id/$id/500/300',
+            width: double.maxFinite,
+          ),
+          Positioned(
+            left: 20,
+            bottom: 20,
+            child: Text(
+              'Image $id',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -137,15 +132,9 @@ class _BackgroundState extends State<_Background> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        if (_image != null)
-          CustomPaint(
-            size: MediaQuery.sizeOf(context),
-            painter: _BackgroundImagePainter(widget.scrollController, _image!),
-          ),
-        widget.child,
-      ],
+    return CustomPaint(
+      painter: _image != null ? _BackgroundImagePainter(widget.scrollController, _image!) : null,
+      child: widget.child,
     );
   }
 }
