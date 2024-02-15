@@ -11,7 +11,7 @@ class ParallaxScreen extends StatefulWidget {
 }
 
 class _ParallaxScreenState extends State<ParallaxScreen> {
-  late List<int> ids = List.generate(10, (index) => Random().nextInt(500));
+  late final List<int> ids = List.generate(10, (index) => Random().nextInt(500));
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -25,7 +25,6 @@ class _ParallaxScreenState extends State<ParallaxScreen> {
     return Scaffold(
       body: _Background(
         scrollController: _scrollController,
-        imageProvider: const NetworkImage('https://picsum.photos/id/307/600/4000'),
         child: ListView.builder(
           controller: _scrollController,
           itemCount: ids.length,
@@ -96,11 +95,9 @@ class _Background extends StatefulWidget {
   const _Background({
     required this.child,
     required this.scrollController,
-    required this.imageProvider,
   });
   final Widget child;
   final ScrollController scrollController;
-  final ImageProvider imageProvider;
 
   @override
   State<_Background> createState() => _BackgroundState();
@@ -115,12 +112,13 @@ class _BackgroundState extends State<_Background> {
 
   ui.Image? _image;
   Future<void> _loadImage() async {
+    const imageProvider = NetworkImage('https://picsum.photos/id/307/600/4000');
     final ImageStreamListener listener = ImageStreamListener((info, _) {
       setState(() {
         _image = info.image;
       });
     });
-    final ImageStream stream = widget.imageProvider.resolve(const ImageConfiguration());
+    final ImageStream stream = imageProvider.resolve(const ImageConfiguration());
     stream.addListener(listener);
   }
 
@@ -148,24 +146,25 @@ class _BackgroundImagePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final imageWidth = image.width.toDouble();
     final imageHeight = image.height.toDouble();
-    final pixelRatio = imageWidth / size.width;
+    final aspectRatio = imageWidth / imageHeight;
 
     final src = Rect.fromLTWH(
       0,
       0,
-      size.width * pixelRatio,
+      imageWidth,
       imageHeight,
     );
-    final rect = Rect.fromLTWH(
+    final deltaY = -controller.offset * 0.6;
+    final dst = Rect.fromLTWH(
       0,
-      -controller.offset * 0.6,
+      deltaY,
       size.width,
-      imageHeight / pixelRatio,
+      size.width / aspectRatio,
     );
     canvas.drawImageRect(
       image,
       src,
-      rect,
+      dst,
       Paint()..filterQuality = FilterQuality.high,
     );
   }

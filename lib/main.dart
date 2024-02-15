@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'features/coloring_svg/coloring_svg_screen.dart';
+import 'package:painter/features/parallax/parallax_screen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -13,7 +12,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       // home: SimpleShaderScreen(),
-      home: ColoringSvgScreen(),
+      home: ParallaxScreen(),
     );
   }
 }
